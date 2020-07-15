@@ -1,0 +1,8 @@
+{
+	"google_scopes": ["https://www.googleapis.com/auth/spreadsheets"],
+	"google_sheet_id": "",
+	"strava_athlete_id": "",
+	"strava_client_id": "",
+	"strava_code": "",
+	"strava_client_secret": ""
+}
