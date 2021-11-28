@@ -1,3 +1,6 @@
+"""Script to pull data from Strava into a Google Sheet"""
+#!/usr/bin/env python3
+
 import requests
 import json
 import pickle
@@ -8,6 +11,40 @@ import datetime
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+
+
+class Authenticator():
+    """Class to deal with authentication and tokens"""
+    def __init__(self):
+        self.tmp = ""
+class GoogleSheet():
+    """Class to interact with Google Sheets"""
+    def __init__(self):
+        self.tmp = ""
+
+    def read_config(self):
+        """Method to read config from file"""
+        self.tmp = ""
+
+    def prepare_payload(self):
+        """Method to read config from file"""
+        self.tmp = ""
+    
+
+class Strava():
+    """Class to interact with Strava"""
+    def __init__(self):
+        self.tmp = ""
+    
+    def get_strava_data(self):
+        """Method to read select route data from Strava"""
+        self.tmp = ""
+
+    def transform_strava_data(self):
+        """Method to read select route data from Strava"""
+        self.tmp = ""
+
+
 
 ## auth config
 with open('config.json') as json_file:
