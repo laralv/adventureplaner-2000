@@ -12,7 +12,7 @@ class GoogleSheets:
     def __init__(self):
         self.service_account = gspread.service_account()
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
-        self.worksheet = self.workbook.worksheet("Test")
+        self.worksheet = self.workbook.worksheet("Test") #move to options
     
     def read_route_ids(self):
         pass
@@ -98,7 +98,7 @@ class DataProcessor:
         pass
 
 
-def read_parameters():
+def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
     """
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
