@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+from icecream import ic 
 import datetime
 import json
 import requests
 import gspread
+import argparse
 
 class GoogleSheets:
     
@@ -11,6 +13,9 @@ class GoogleSheets:
         self.service_account = gspread.service_account()
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
         self.worksheet = self.workbook.worksheet("Test")
+    
+    def read_route_ids(self):
+        pass
     
     def update_spreadsheet(self):
         pass
@@ -21,20 +26,23 @@ class GoogleSheets:
             self.worksheet.update(f'D{x}', f'test {x}')
             x = x+1
 
-class Strava:
+class Authenticator:
 
-    def __init__(self):
+    def __init__(self, secrets):
+        self.secrets = secrets
         self.client_id = ""
         self.client_secret = ""
         self.access_token = ""
         self.refresh_token = ""
+        self.token_refreshed_ok = "Refrshed token ok"
+        self.read_secrets()
 
     def read_secrets(self):
-        secrets = json.load(open(args.tokens,'r'))
-        self.client_id = secrets['clientId']
-        self.client_secret = secrets['clientSecret']
-        self.access_token = secrets['accessToken']
-        self.refresh_token = secrets['refreshToken']
+        secrets = json.load(open(self.secrets,'r'))
+        self.client_id = secrets['client_id']
+        self.client_secret = secrets['client_secret']
+        self.access_token = secrets['access_token']
+        self.refresh_token = secrets['refresh_token']
         ic()
         ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
             
@@ -43,43 +51,68 @@ class Strava:
         response = requests.post(url = tokenURL,data =\
             {'client_id': self.client_id,'client_secret': self.client_secret,'grant_type': 'refresh_token','refresh_token': self.refresh_token})
         response_json = response.json()
-        self.write_secrets(clientID, clientSecret, str(responseJson['access_token']), str(responseJson['refresh_token'])) #We here now
+        self.access_token = str(response_json['access_token'])
+        self.refresh_token = str(response_json['refresh_token'])
+        self.write_secrets()
         ic()
+        ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
 
     # Write new access tokens to file
-    def write_secrets(clientID, clientSecret, accessToken,refreshToken):
+    def write_secrets(self):
         secrets = {}
-        secrets['clientId'] = clientID
-        secrets['clientSecret'] = clientSecret
-        secrets['accessToken'] = accessToken
-        secrets['refreshToken'] = refreshToken
-        FileObj = open(args.tokens,'w')
+        secrets['client_id'] = self.client_id
+        secrets['client_secret'] = self.client_secret
+        secrets['access_token'] = self.access_token
+        secrets['refresh_token'] = self.refresh_token
+        FileObj = open(self.secrets,'w')
         FileObj.write(json.dumps(secrets))
         FileObj.close()
         ic()
-        ic(accessToken, refreshToken)
+        ic(self.access_token, self.refresh_token)
+class Strava:
+    def __init__(self, authenticator):
+        self.authenticator = authenticator
+        self.get_data()
 
     # Make the API call
-    def MakeAPICall(clientID, clientSecret, accessToken,refreshToken, stravaResource):
+    def get_data(self):
         session = requests.Session()
-        session.headers.update({'Authorization': f'Bearer {accessToken}'})
-        response = session.get(stravaResource)
+        session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
+        response = session.get(f"https://www.strava.com/api/v3/routes/27710837")
+        #response = session.get(f"https://www.strava.com/api/v3/routes/{x}")
         ic()
         
         if response.status_code == 401:
-            print(f'{datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired, getting new')
-            getNewAccessToken(clientID, clientSecret, refreshToken)
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired, getting new')
+            self.authenticator.get_new_access_token()
             ic()
-            return False, TokenRefreshedOK
+            return False, self.authenticator.token_refreshed_ok
         else:
-            print(f'{datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token passed')
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token passed')
             FullResponse = response.json()
             ic()
+            ic(FullResponse)
             return True, FullResponse
-
 class DataProcessor:
     def __init__(self) -> None:
         pass
+
+
+def read_parameters():
+    """
+    Function for reading variables for the script,
+    for more on argparse, refer to https://zetcode.com/python/argparse/
+    """
+    parser = argparse.ArgumentParser(
+        description="Parameters for Adventure planner 2000")
+    parser.add_argument("--debug", type=str,
+                        help="Flag to enable or disable icecream debug", required=True)
+    parser.add_argument("--secrets", type=str,
+                        help="Json file that stores secrets", required=True)
+    args = parser.parse_args()
+    ic()
+    ic(args)
+    return args
 
 
 if __name__ == "__main__":
@@ -87,7 +120,6 @@ if __name__ == "__main__":
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
     print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Starting program...')
     
-    """
     PARAMETERS = read_parameters()
     
     if PARAMETERS.debug == "yes":
@@ -97,11 +129,11 @@ if __name__ == "__main__":
         ic()
         ic.disable()
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug deactivated')
-    """
-
 
     #sheet = GoogleSheets()
     #sheet.test_write()
+    AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
+    STRAVA = Strava(AUTHENTICATOR)
     
 
 
