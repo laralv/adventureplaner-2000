@@ -71,33 +71,53 @@ class Authenticator:
         FileObj = open(self.secrets,'w')
         FileObj.write(json.dumps(secrets))
         FileObj.close()
+        self.read_secrets()
         ic(self.access_token, self.refresh_token)
+
 class Strava:
     def __init__(self, authenticator):
         self.authenticator = authenticator
+        self.api_status = ""
         self.get_data()
 
-    # Make the API call
-    def get_data(self):
+    def api_call(self):
         ic()
-        session = requests.Session()
-        session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
-        response = session.get(f"https://www.strava.com/api/v3/routes/27710837")
-        #response = session.get(f"https://www.strava.com/api/v3/routes/{x}")
-        
-        if response.status_code == 401:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired, getting new')
+        try:
+            session = requests.Session()
+            session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
+            response = session.get(f'https://www.strava.com/api/v3/routes/27710837')
+            #response = session.get(f"https://www.strava.com/api/v3/routes/{x}")
+            self.api_status = response.status_code
+            return response
+        except: # be more specific about the exception
+            pass
+
+    def test_api(self):
+        ic()
+        self.api_call()
+        if self.api_status == 200:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API working and access token passed - API Code {self.api_status}')
+        elif self.api_status == 401:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired, getting new - API Code {self.api_status}')
             self.authenticator.get_new_access_token()
-            return False, self.authenticator.token_refreshed_ok
+            self.get_data()
+        elif self.api_status in range(402, 451):
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 4xx client error - API Code {self.api_status}')
+        elif self.api_status in range(500, 511):
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 5xx server error - API Code {self.api_status}')
         else:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token passed')
-            FullResponse = response.json()
-            ic(FullResponse)
-            return True, FullResponse
+             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
+    
+    def get_data(self):    
+        ic()
+        self.test_api()
+        if self.api_status == 200:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Processing data from strava')
+            raw_data = self.api_call().json()
+            ic(raw_data)
 class DataProcessor:
     def __init__(self) -> None:
         pass
-
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
     """
