@@ -15,12 +15,15 @@ class GoogleSheets:
         self.worksheet = self.workbook.worksheet("Test") #move to options
     
     def read_route_ids(self):
+        ic()
         pass
     
     def update_spreadsheet(self):
+        ic()
         pass
 
     def test_write(self):
+        ic()
         x = 1
         while x < 20:
             self.worksheet.update(f'D{x}', f'test {x}')
@@ -38,27 +41,28 @@ class Authenticator:
         self.read_secrets()
 
     def read_secrets(self):
+        ic()
         secrets = json.load(open(self.secrets,'r'))
         self.client_id = secrets['client_id']
         self.client_secret = secrets['client_secret']
         self.access_token = secrets['access_token']
         self.refresh_token = secrets['refresh_token']
-        ic()
         ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
             
     def get_new_access_token(self):
-        tokenURL = "https://www.strava.com/oauth/token"
-        response = requests.post(url = tokenURL,data =\
+        ic()
+        token_url = "https://www.strava.com/oauth/token"
+        response = requests.post(url = token_url,data =\
             {'client_id': self.client_id,'client_secret': self.client_secret,'grant_type': 'refresh_token','refresh_token': self.refresh_token})
         response_json = response.json()
         self.access_token = str(response_json['access_token'])
         self.refresh_token = str(response_json['refresh_token'])
         self.write_secrets()
-        ic()
         ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
 
     # Write new access tokens to file
     def write_secrets(self):
+        ic()
         secrets = {}
         secrets['client_id'] = self.client_id
         secrets['client_secret'] = self.client_secret
@@ -67,7 +71,6 @@ class Authenticator:
         FileObj = open(self.secrets,'w')
         FileObj.write(json.dumps(secrets))
         FileObj.close()
-        ic()
         ic(self.access_token, self.refresh_token)
 class Strava:
     def __init__(self, authenticator):
@@ -76,21 +79,19 @@ class Strava:
 
     # Make the API call
     def get_data(self):
+        ic()
         session = requests.Session()
         session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
         response = session.get(f"https://www.strava.com/api/v3/routes/27710837")
         #response = session.get(f"https://www.strava.com/api/v3/routes/{x}")
-        ic()
         
         if response.status_code == 401:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired, getting new')
             self.authenticator.get_new_access_token()
-            ic()
             return False, self.authenticator.token_refreshed_ok
         else:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token passed')
             FullResponse = response.json()
-            ic()
             ic(FullResponse)
             return True, FullResponse
 class DataProcessor:
@@ -103,6 +104,7 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
     """
+    ic()
     parser = argparse.ArgumentParser(
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
@@ -110,7 +112,6 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
     parser.add_argument("--secrets", type=str,
                         help="Json file that stores secrets", required=True)
     args = parser.parse_args()
-    ic()
     ic(args)
     return args
 
