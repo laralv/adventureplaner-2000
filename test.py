@@ -89,7 +89,6 @@ class Strava:
         self.authenticator = authenticator
         self.datastore = datastore
         self.api_status = ""
-        self.get_data()
 
     def api_call(self, route_id):
         ic()
@@ -207,8 +206,7 @@ if __name__ == "__main__":
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
     STRAVA.get_data()
-    SHEET.update_sheet()
-    #consider moving strava.get_data() here, and also, the next steps, e.g. sheet.update
+    #SHEET.update_sheet()
     
     
 
