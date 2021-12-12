@@ -20,13 +20,13 @@ class GoogleSheets:
     
     def read_route_ids(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
-        self.route_ids = self.worksheet.col_values(1)
+        self.route_ids = self.worksheet.col_values(1) #instead of numbered column, use lookup to find and set it
         for text in range(4): #check if this can be done in a better way, while loop?
             self.route_ids.pop(0)
             self.route_ids.pop()
         ic(self.route_ids)
     
-    def update_spreadsheet(self):
+    def update_sheet(self): #should probably the aggregated data object as an argument
         ic()
         pass
 
@@ -70,7 +70,6 @@ class Authenticator:
         self.write_secrets()
         ic(self.access_token, self.refresh_token)
 
-    # Write new access tokens to file
     def write_secrets(self):
         ic() #clean up the use of IC in general, dont need to show functions, only variables, also make sure variables are printed in the right order
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
@@ -113,6 +112,7 @@ class Strava:
         elif self.api_status == 401:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired - API Code {self.api_status}')
             self.authenticator.get_new_access_token()
+            self.api_status = 200 #Check this one, only set if method above returns true
         elif self.api_status in range(402, 451):
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 4xx client error - API Code {self.api_status}')
         elif self.api_status in range(500, 511):
@@ -129,38 +129,43 @@ class Strava:
             for route_id in self.sheet.route_ids:
                 raw_data = self.api_call(route_id).json()
                 if self.api_status == 404:
-                    print("Invalid route ID")
+                    print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Invalid route ID')
                 else:
-                    self.datastore.transform_route_data(route_id, raw_data) # consider a short print here
+                    self.datastore.transform_route_data(route_id, raw_data)
+                    ic(raw_data)
 
 class Datastore:
     def __init__(self):
         self.aggregated_route_data = dict()
 
     def transform_route_data(self, route_id, raw_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Transforming route data')
-        route_data = list()
-        route_data.append(route_id)
-        route_data.append(raw_data['name'])
-        route_data.append(raw_data['distance'] / 1000) #check rounding 
-        route_data.append(raw_data['elevation_gain']) #check rounding
-        route_data.append(raw_data['estimated_moving_time']) #check rounding
-        route_data.append(raw_data['updated_at']) #change data format
-        route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")')
-        ic(route_data) # make sure IC variables appear in right order, check all
-        self.aggregate_route_data(route_id, route_data)
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
+        if route_id == raw_data['id_str']:
+            route_data = list()
+            route_data.append(route_id)
+            route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
+            route_data.append(raw_data['distance'] / 1000) #check rounding 
+            route_data.append(raw_data['elevation_gain']) #check rounding
+            route_data.append(raw_data['estimated_moving_time']) #check rounding
+            route_data.append(raw_data['updated_at']) #change data format
+            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")')
+            ic(route_data) # make sure IC variables appear in right order, check all
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
+            self.aggregate_route_data(route_id, route_data)
+        else:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
         
     def aggregate_route_data(self, route_id, transformed_route_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data')
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[1]} (route id {route_id})')
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
-    def verify_route_id(self):
-        pass # check to see that route ID matches, compare from google sheet with data from strava, use when storing data and writing to google
+    def run_statistics(self):
+        pass #include stats for the different functions, store under data
 
 
-# match route id with one another
-# include stats for the different functions, store under data
+
+
 # Instad of ic(), use print function to explain what is happening
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
@@ -182,7 +187,7 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
 
 
 if __name__ == "__main__":
-# consider moving all logic here, maybe not..
+
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
     print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Starting program...')
     
@@ -201,6 +206,9 @@ if __name__ == "__main__":
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
+    STRAVA.get_data()
+    SHEET.update_sheet()
+    #consider moving strava.get_data() here, and also, the next steps, e.g. sheet.update
     
     
 
