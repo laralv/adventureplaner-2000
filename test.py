@@ -7,7 +7,7 @@ import requests
 import gspread
 import argparse
 
-from requests.models import Response
+from requests.models import Response #why is this here?
 
 class GoogleSheets:
     
@@ -182,7 +182,7 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
 
 
 if __name__ == "__main__":
-
+# consider moving all logic here, maybe not..
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
     print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Starting program...')
     
