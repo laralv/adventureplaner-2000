@@ -24,14 +24,24 @@ class GoogleSheets:
     def read_route_ids(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
         self.route_ids = self.worksheet.col_values(1) #instead of numbered column, use lookup to find and set it
-        for text in range(4): #check if this can be done in a better way, while loop?
+        for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
             self.route_ids.pop(0)
-            self.route_ids.pop()
         ic(self.route_ids)
     
-    def update_sheet(self): #should probably the aggregated data object as an argument
-        # Print statement here
-        pass
+    def update_sheet(self, datastore):
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
+        aggregated_route_data = datastore.aggregated_route_data
+        for route_id in aggregated_route_data.keys():
+            route_data = aggregated_route_data.get(route_id)
+            
+            for x in route_data:
+                print(route_data[x])
+            #for item in route_data:
+             #   print(route_data[item])
+
+
+   #         for route_data in aggregated_route_data.values():
+    #            print(route_data[len])
 
     def test_write(self): #remove this one
         ic()
@@ -70,7 +80,6 @@ class Authenticator:
         self.refresh_token = str(response_json['refresh_token'])
         ic(self.access_token, self.refresh_token)
         self.write_secrets()
-        
 
     def write_secrets(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
@@ -202,7 +211,7 @@ if __name__ == "__main__":
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
     STRAVA.get_data()
-    #SHEET.update_sheet()
+    SHEET.update_sheet(DATASTORE)
     
     
 
