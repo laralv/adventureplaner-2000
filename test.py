@@ -23,7 +23,7 @@ class GoogleSheets:
     
     def read_route_ids(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
-        self.route_ids = self.worksheet.col_values(1) #instead of numbered column, use lookup to find and set it
+        self.route_ids = self.worksheet.col_values(1)
         for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
             self.route_ids.pop(0)
         ic(self.route_ids)
@@ -33,15 +33,10 @@ class GoogleSheets:
         aggregated_route_data = datastore.aggregated_route_data
         for route_id in aggregated_route_data.keys():
             route_data = aggregated_route_data.get(route_id)
-            
-            for x in route_data:
-                print(route_data[x])
-            #for item in route_data:
-             #   print(route_data[item])
-
-
-   #         for route_data in aggregated_route_data.values():
-    #            print(route_data[len])
+            for item in route_data:
+                print(item)
+                self.worksheet.batch_update() # here now, build list of dictionaries , but not loop
+                #here now, use 
 
     def test_write(self): #remove this one
         ic()
