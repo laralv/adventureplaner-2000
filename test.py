@@ -99,7 +99,7 @@ class Strava:
             response = session.get(f'https://www.strava.com/api/v3/routes/{route_id}')
             self.api_status = response.status_code
             ic(response)
-            ic(api.status)
+            ic(self.api_status)
             return response
         except: # be more specific about the exception
             pass
@@ -112,7 +112,7 @@ class Strava:
         elif self.api_status == 401:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired - API Code {self.api_status}')
             self.authenticator.get_new_access_token()
-            self.api_status = 200 #Check this one, only set if method above returns true
+            self.api_status = 200 #Check this one, only set if method above returns true. This one doesn work, code stops after 401. Check again when token expires
         elif self.api_status in range(402, 451):
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 4xx client error - API Code {self.api_status}')
         elif self.api_status in range(500, 511):
@@ -140,8 +140,7 @@ class Datastore:
     def transform_route_data(self, route_id, raw_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
         if route_id == raw_data['id_str']:
-            route_data = list()
-            route_data.append(route_id)
+            route_data = [route_id]
             route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
             route_data.append(raw_data['distance'] / 1000) #check rounding 
             route_data.append(raw_data['elevation_gain']) #check rounding
@@ -153,7 +152,7 @@ class Datastore:
             self.aggregate_route_data(route_id, route_data)
         else:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
-        
+
     def aggregate_route_data(self, route_id, transformed_route_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[1]} (route id {route_id})')
         self.aggregated_route_data.update({route_id: transformed_route_data})
