@@ -27,7 +27,7 @@ class GoogleSheets:
         ic(self.route_ids)
     
     def update_sheet(self): #should probably the aggregated data object as an argument
-        ic()
+        # Print statement here
         pass
 
     def test_write(self): #remove this one
@@ -49,7 +49,6 @@ class Authenticator:
         self.read_secrets()
 
     def read_secrets(self):
-        ic()
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from file')
         secrets = json.load(open(self.secrets,'r'))
         self.client_id = secrets['client_id']
@@ -59,7 +58,6 @@ class Authenticator:
         ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
             
     def get_new_access_token(self):
-        ic()
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting new access token')
         token_url = "https://www.strava.com/oauth/token"
         response = requests.post(url = token_url,data =\
@@ -67,11 +65,11 @@ class Authenticator:
         response_json = response.json()
         self.access_token = str(response_json['access_token'])
         self.refresh_token = str(response_json['refresh_token'])
-        self.write_secrets()
         ic(self.access_token, self.refresh_token)
+        self.write_secrets()
+        
 
     def write_secrets(self):
-        ic() #clean up the use of IC in general, dont need to show functions, only variables, also make sure variables are printed in the right order
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
         secrets = {}
         secrets['client_id'] = self.client_id
@@ -91,19 +89,19 @@ class Strava:
         self.api_status = ""
 
     def api_call(self, route_id):
-        ic()
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Making API call')
             session = requests.Session()
             session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
             response = session.get(f'https://www.strava.com/api/v3/routes/{route_id}')
             self.api_status = response.status_code
+            ic(response)
+            ic(api.status)
             return response
         except: # be more specific about the exception
             pass
 
     def test_api(self):
-        ic()
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Testing API')
         self.api_call(self.sheet.route_ids[1])
         if self.api_status == 200:
@@ -120,7 +118,6 @@ class Strava:
              print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
     
     def get_data(self):
-        ic()
         self.test_api()
         if self.api_status == 200:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting data from strava')
@@ -148,7 +145,7 @@ class Datastore:
             route_data.append(raw_data['estimated_moving_time']) #check rounding
             route_data.append(raw_data['updated_at']) #change data format
             route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")')
-            ic(route_data) # make sure IC variables appear in right order, check all
+            ic(route_data)
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
             self.aggregate_route_data(route_id, route_data)
         else:
@@ -160,12 +157,9 @@ class Datastore:
         ic(self.aggregated_route_data)
 
     def run_statistics(self):
+        # Print statement here
         pass #include stats for the different functions, store under data
 
-
-
-
-# Instad of ic(), use print function to explain what is happening
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
     print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading parameters')
