@@ -18,6 +18,9 @@ class GoogleSheets:
         self.route_ids = list()
         self.read_route_ids()
     
+    def read_google_config(self):
+        pass
+    
     def read_route_ids(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
         self.route_ids = self.worksheet.col_values(1) #instead of numbered column, use lookup to find and set it
@@ -45,7 +48,7 @@ class Authenticator:
         self.client_secret = ""
         self.access_token = ""
         self.refresh_token = ""
-        self.token_refreshed_ok = "Refrshed token ok"
+        self.token_refreshed_ok = "Refrshed token ok" # Not in use, remove
         self.read_secrets()
 
     def read_secrets(self):
