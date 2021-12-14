@@ -24,11 +24,30 @@ class GoogleSheets:
         pass
     
     def find_column_ids(self):
-        test = self.worksheet.find("Route ID (M)") #Create a list here, or dictionary
-        self.column_id.append(test.row, test.col)??
-        test.
-        pass #store info in a dictionary
-    
+        #print statement
+        self.column_id = {
+                        "Route id (M)": 0,
+                        "Distance (A)": 0,
+                        "Ascent (A)": 0
+                        }
+        for name in self.column_id.keys():
+            try:
+                self.column_id.update({name: self.worksheet.find(name).col})
+            except: #too broad, narrow
+                #Print statement on exception
+
+        
+        print(self.column_id.keys())
+
+        
+        """
+        tmp = "Notes T"
+        test = self.worksheet.find(tmp) 
+        self.column_id.append(test.col)
+        print(self.column_id[0])
+        #pass #store info in a dictionary
+        """
+
     def read_route_ids(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
         self.route_ids = self.worksheet.col_values(1) #refer instead to method column variables, see above
@@ -36,6 +55,7 @@ class GoogleSheets:
             self.route_ids.pop(0)
         ic(self.route_ids)
     
+    """
     def update_sheet(self, datastore):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
         aggregated_route_data = datastore.aggregated_route_data
@@ -43,17 +63,19 @@ class GoogleSheets:
             route_data = aggregated_route_data.get(route_id)
             for item in route_data:
                 print(item)
-                 
-                row_id = self.worksheet.find(route_id)
-                test = row_id.row
+
+                row_id = self.worksheet.find(route_id).row
+                for names in column_id.keys():
+                    col_id = self.column_id.get(names)
             
-                self.worksheet.batch_update([{
-                    'range': f'{self.column_id[0]}{row_id.row}:{self.column_id[0]}{row_id}',
-                    'values': [[route_data[1]]],
-                }, {
-                    'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
-                    'values': [[route_data[2]]],
-                }])
+            #The mapping happens here..
+                    self.worksheet.batch_update([{
+                        'range': f'{col_id}{row_id}:{col_id}{row_id}',
+                        'values': [[route_data[1]]],
+                    }, {
+                        'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
+                        'values': [[route_data[2]]],
+                    }])
 
 
                 worksheet.batch_update([{
@@ -70,6 +92,7 @@ class GoogleSheets:
         while x < 20:
             self.worksheet.update(f'D{x}', f'test {x}')
             x = x+1
+    """
 
 class Authenticator:
 
@@ -233,11 +256,7 @@ if __name__ == "__main__":
     SHEET = GoogleSheets()
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
-    STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
-    STRAVA.get_data()
-    SHEET.update_sheet(DATASTORE)
-    
-    
-
-
+    #STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
+    #STRAVA.get_data()
+    #SHEET.update_sheet(DATASTORE)
     
