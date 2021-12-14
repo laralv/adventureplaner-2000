@@ -16,7 +16,7 @@ class GoogleSheets:
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
         self.worksheet = self.workbook.worksheet("Norge på langs") #move to options
         self.route_ids = list()
-        self.column_id = list()
+        self.column_id = dict()
         self.read_route_ids()
         self.find_column_ids()
     
@@ -35,6 +35,7 @@ class GoogleSheets:
                 self.column_id.update({name: self.worksheet.find(name).col})
             except: #too broad, narrow
                 #Print statement on exception
+                pass
 
         
         print(self.column_id.keys())
