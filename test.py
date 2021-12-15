@@ -27,6 +27,7 @@ class GoogleSheets:
     def find_column_ids(self): #also include IC
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Finding column IDs')
         self.column_id = {
+                        "Route id (M)": 0,
                         "Distance (A)": 0,
                         "Ascent (A)": 0
                         }
@@ -52,11 +53,16 @@ class GoogleSheets:
             route_data = aggregated_route_data.get(route_id)
             row_id = self.worksheet.find(route_id).row #could be a dict?
                                
-                for col_name in column_id.keys():
-                    self.worksheet.update(f'{self.column_id.get(col_name)}{row_id}', f'test {x}')
-                    
-                    col_map = []
-                    row_map[] = []
+            for col_name in self.column_id.keys():
+                print(col_name)
+                print(f'column: {self.column_id.get(col_name)}, row: {row_id}')
+                if col_name != "Route id (M)": #can this be done in a better way, just skip first entry in list?
+                    self.worksheet.update_cell(row_id,self.column_id.get(col_name), f'test {col_name}')
+                
+                #consider batch
+                
+                #col_map = []
+                #row_map[] = []
             
 #The mapping happens here.. Test this one before including morew
         """
@@ -71,7 +77,7 @@ class GoogleSheets:
             'values': [[route_data[3]]],
         }])
 
-                """
+                
                 worksheet.batch_update([{
                     'range': 'A1:B1',
                     'values': [['42', '43']],
@@ -79,7 +85,7 @@ class GoogleSheets:
                     'range': 'my_range',
                     'values': [['44', '45']],
                 }])
-                """
+                
         """
 
     def test_write(self): #remove this one
@@ -191,7 +197,7 @@ class Datastore:
     def transform_route_data(self, route_id, raw_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
         if route_id == raw_data['id_str']:
-            route_data = [route_id] #dont need this one here? Check it is used somewhere else..? Route_id is the keu
+            route_data = [] #switch to dict
             route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
             route_data.append(raw_data['distance'] / 1000) #check rounding 
             route_data.append(raw_data['elevation_gain']) #check rounding
@@ -251,7 +257,7 @@ if __name__ == "__main__":
     SHEET = GoogleSheets()
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
-    #STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
-    #STRAVA.get_data()
+    STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
+    STRAVA.get_data()
     SHEET.update_sheet(DATASTORE)
     
