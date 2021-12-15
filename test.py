@@ -16,14 +16,13 @@ class GoogleSheets:
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
         self.worksheet = self.workbook.worksheet("Norge på langs") #move to options
         self.route_ids = list()
-        self.column_id = dict()
-        self.find_column_ids()
         self.read_route_ids()
         
     
     def read_google_config(self): #dont need in first version, also include IC
         pass
     
+    """
     def find_column_ids(self): #also include IC
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Finding column IDs')
         self.column_id = {
@@ -37,34 +36,43 @@ class GoogleSheets:
             except: #too broad, narrow
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error looking up column ID')
                 pass
+    """
 
     def read_route_ids(self): #also include IC
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
-            self.route_ids = self.worksheet.col_values(self.column_id.get("Route id (M)"))
+            self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
             for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
                 self.route_ids.pop(0)
             ic(self.route_ids)
    
     
-    def update_sheet(self, datastore): #also include IC
+    def update_sheet(self, datastore): #also include IC, + some info on mapping here
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
         aggregated_route_data = datastore.aggregated_route_data
+        payload = list()
         for route_id in aggregated_route_data.keys():
             route_data = aggregated_route_data.get(route_id)
-            row_id = self.worksheet.find(route_id).row #could be a dict?
-                               
-            for col_name in self.column_id.keys():
-                print(col_name)
-                print(f'column: {self.column_id.get(col_name)}, row: {row_id}')
-                if col_name != "Route id (M)": #can this be done in a better way, just skip first entry in list?
-                    self.worksheet.update_cell(row_id,self.column_id.get(col_name), f'test {col_name}')
+            row_id = self.worksheet.find(route_id).row
+
+            
+            payload.append({'range': f'C{row_id}:K{row_id}',
+                            'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4],route_data[5]]]})
+        
+        self.worksheet.batch_update(payload)
+        
+            #print(payload)
+        #print(payload)
+            #print(f'column: {self.column_id.get(col_name)}, row: {row_id}')
+            #if col_name != "Route id (M)": #can this be done in a better way, just skip first entry in list?
+            
+                #self.worksheet.update_cell(row_id,self.column_id.get(col_name), f'test {col_name}')
                 
                 #consider batch
                 
                 #col_map = []
                 #row_map[] = []
             
-#The mapping happens here.. Test this one before including morew
+            #The mapping happens here.. Test this one before including morew
         """
         self.worksheet.batch_update([{
             'range': f'{self.column_id.get("Distance (A)")}{row_id[0]}:{col_id}{row_id}', # look at this one
@@ -125,7 +133,7 @@ class Authenticator:
             self.access_token = str(response_json['access_token'])
             self.refresh_token = str(response_json['refresh_token'])
             ic(self.access_token, self.refresh_token)
-            self.api_status = response.status_code #check on next run with outdated token if this will work, should return 200
+            self.api_status = response.status_code #This attribute does not belong here, move to strava or something
             self.write_secrets()
         except:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error getting new access token')
@@ -148,6 +156,7 @@ class Strava:
         self.authenticator = authenticator
         self.datastore = datastore
         self.api_status = ""
+        self.get_data()
 
     def api_call(self, route_id):
         try:
@@ -177,18 +186,22 @@ class Strava:
         else:
              print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
     
-    def get_data(self):
+    def get_data(self): #To doctstring, do not exceed 100 requests pr 15 minutes
         self.test_api()
-        if self.api_status == 200:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting data from strava')
-            
-            for route_id in self.sheet.route_ids:
-                raw_data = self.api_call(route_id).json()
-                if self.api_status == 404:
-                    print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Invalid route ID')
-                else:
-                    self.datastore.transform_route_data(route_id, raw_data)
-                    ic(raw_data)
+        try:
+            if self.api_status == 200:
+                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting data from strava')
+                
+                for route_id in self.sheet.route_ids:
+                    raw_data = self.api_call(route_id).json()
+                    if self.api_status == 404:
+                        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Invalid route ID')
+                    else:
+                        self.datastore.transform_route_data(route_id, raw_data)
+                        ic(raw_data)
+            self.sheet.update_sheet(self.datastore)
+        except: #Too broad
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
 
 class Datastore:
     def __init__(self):
@@ -197,13 +210,13 @@ class Datastore:
     def transform_route_data(self, route_id, raw_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
         if route_id == raw_data['id_str']:
-            route_data = [] #switch to dict
+            route_data = []
             route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
             route_data.append(raw_data['distance'] / 1000) #check rounding 
             route_data.append(raw_data['elevation_gain']) #check rounding
             route_data.append(raw_data['estimated_moving_time']) #check rounding
+            route_data.append(f'=HYPERLINK(https://www.strava.com/routes/{route_id}, "Strava")') #move to name, also, not working.. 
             route_data.append(raw_data['updated_at']) #change data format
-            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")')
             ic(route_data)
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
             self.aggregate_route_data(route_id, route_data)
@@ -211,7 +224,7 @@ class Datastore:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
 
     def aggregate_route_data(self, route_id, transformed_route_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[1]} (route id {route_id})')
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[0]} (route id {route_id})')
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
@@ -258,6 +271,5 @@ if __name__ == "__main__":
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
-    STRAVA.get_data()
-    SHEET.update_sheet(DATASTORE)
+
     
