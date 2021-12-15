@@ -20,11 +20,18 @@ class GoogleSheets:
         self.read_route_ids()
         self.find_column_ids()
     
-    def read_google_config(self): #dont need in first version
+    def read_google_config(self): #dont need in first version, also include IC
         pass
     
-    def find_column_ids(self):
-        #print statement
+    def read_route_ids(self): #also include IC
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
+        self.route_ids = self.worksheet.col_values(self.column_id.get("Route id (M)"))
+        for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
+            self.route_ids.pop(0)
+        ic(self.route_ids)
+    
+    def find_column_ids(self): #also include IC
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Finding column IDs')
         self.column_id = {
                         "Route id (M)": 0,
                         "Distance (A)": 0,
@@ -34,51 +41,34 @@ class GoogleSheets:
             try:
                 self.column_id.update({name: self.worksheet.find(name).col})
             except: #too broad, narrow
-                #Print statement on exception
+                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error looking up columnn ID')
                 pass
 
-        
-        print(self.column_id.keys())
-
-        
-        """
-        tmp = "Notes T"
-        test = self.worksheet.find(tmp) 
-        self.column_id.append(test.col)
-        print(self.column_id[0])
-        #pass #store info in a dictionary
-        """
-
-    def read_route_ids(self):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
-        self.route_ids = self.worksheet.col_values(1) #refer instead to method column variables, see above
-        for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
-            self.route_ids.pop(0)
-        ic(self.route_ids)
-    
-    """
-    def update_sheet(self, datastore):
+    def update_sheet(self, datastore): #also include IC
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
         aggregated_route_data = datastore.aggregated_route_data
         for route_id in aggregated_route_data.keys():
             route_data = aggregated_route_data.get(route_id)
-            for item in route_data:
-                print(item)
-
-                row_id = self.worksheet.find(route_id).row
+            row_id = self.worksheet.find(route_id).row
+            for value in route_data:
+                print(value)
+                
                 for names in column_id.keys():
                     col_id = self.column_id.get(names)
             
-            #The mapping happens here..
+            #The mapping happens here.. Test this one before including morew
                     self.worksheet.batch_update([{
                         'range': f'{col_id}{row_id}:{col_id}{row_id}',
                         'values': [[route_data[1]]],
                     }, {
                         'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
                         'values': [[route_data[2]]],
+                    }, {
+                        'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
+                        'values': [[route_data[3]]],
                     }])
 
-
+                """
                 worksheet.batch_update([{
                     'range': 'A1:B1',
                     'values': [['42', '43']],
@@ -86,6 +76,7 @@ class GoogleSheets:
                     'range': 'my_range',
                     'values': [['44', '45']],
                 }])
+                """
 
     def test_write(self): #remove this one
         ic()
@@ -93,7 +84,6 @@ class GoogleSheets:
         while x < 20:
             self.worksheet.update(f'D{x}', f'test {x}')
             x = x+1
-    """
 
 class Authenticator:
 
@@ -197,7 +187,7 @@ class Datastore:
     def transform_route_data(self, route_id, raw_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
         if route_id == raw_data['id_str']:
-            route_data = [route_id]
+            route_data = [route_id] #dont need this one here?
             route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
             route_data.append(raw_data['distance'] / 1000) #check rounding 
             route_data.append(raw_data['elevation_gain']) #check rounding
@@ -215,7 +205,7 @@ class Datastore:
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
-    def run_statistics(self):
+    def run_statistics(self): #also include IC
         # Print statement here
         pass #include stats for the different functions, store under data
 
