@@ -19,93 +19,33 @@ class GoogleSheets:
         self.route_ids = list()
         self.read_route_ids()
         
-    
+
     def read_google_config(self): #dont need in first version, also include IC
         pass
-    
-    """
-    def find_column_ids(self): #also include IC
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Finding column IDs')
-        self.column_id = {
-                        "Route id (M)": 0,
-                        "Distance (A)": 0,
-                        "Ascent (A)": 0
-                        }
-        for name in self.column_id.keys():
-            try:
-                self.column_id.update({name: self.worksheet.find(name).col})
-            except: #too broad, narrow
-                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error looking up column ID')
-                pass
-    """
 
     def read_route_ids(self): #also include IC
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
             self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
+            
             for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
                 self.route_ids.pop(0)
+            
             ic(self.route_ids)
-   
     
     def update_sheet(self, datastore): #also include IC, + some info on mapping here
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
         aggregated_route_data = datastore.aggregated_route_data
+        params={'value_input_option': 'user_entered'}
         payload = list()
+        
         for route_id in aggregated_route_data.keys():
             route_data = aggregated_route_data.get(route_id)
             row_id = self.worksheet.find(route_id).row
-
-            
             payload.append({'range': f'C{row_id}:K{row_id}',
                             'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4],route_data[5]]]})
-            
         
-        self.worksheet.batch_update(payload)
-        #self.worksheet.bat
-        
-            #print(payload)
-        #print(payload)
-            #print(f'column: {self.column_id.get(col_name)}, row: {row_id}')
-            #if col_name != "Route id (M)": #can this be done in a better way, just skip first entry in list?
-            
-                #self.worksheet.update_cell(row_id,self.column_id.get(col_name), f'test {col_name}')
-                
-                #consider batch
-                
-                #col_map = []
-                #row_map[] = []
-            
-            #The mapping happens here.. Test this one before including morew
-        """
-        self.worksheet.batch_update([{
-            'range': f'{self.column_id.get("Distance (A)")}{row_id[0]}:{col_id}{row_id}', # look at this one
-            'values': [[route_data[0]]], #if routeid is not in the list, see below, start with 0
-        }, {
-            'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
-            'values': [[route_data[2]]],
-        }, {
-            'range': f'{self.column_id[1]}{row_id}:{self.column_id[1]}{row_id}',
-            'values': [[route_data[3]]],
-        }])
-
-                
-                worksheet.batch_update([{
-                    'range': 'A1:B1',
-                    'values': [['42', '43']],
-                }, {
-                    'range': 'my_range',
-                    'values': [['44', '45']],
-                }])
-                
-        """
-
-    def test_write(self): #remove this one
-        ic()
-        x = 1
-        while x < 20:
-            self.worksheet.update(f'D{x}', f'test {x}')
-            x = x+1
-
+        self.worksheet.batch_update(payload, **params)
+        #tune print statements, dont print unneccesarily
 class Authenticator:
 
     def __init__(self, secrets):
@@ -202,11 +142,11 @@ class Strava:
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
-            self.sheet.update_sheet(self.datastore)    
+                
         except: #Too broad
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
         
-        
+        self.sheet.update_sheet(self.datastore)
 class Datastore:
     def __init__(self):
         self.aggregated_route_data = dict()
@@ -219,7 +159,7 @@ class Datastore:
             route_data.append(raw_data['distance'] / 1000) #check rounding 
             route_data.append(raw_data['elevation_gain']) #check rounding
             route_data.append(raw_data['estimated_moving_time']) #check rounding
-            route_data.append(f'=HYPERLINK(https://www.strava.com/routes/{route_id}, "Strava")') #move to name, also, not working.. 
+            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")') #move to name, also, not working.. 
             route_data.append(raw_data['updated_at']) #change data format
             ic(route_data)
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
@@ -235,7 +175,6 @@ class Datastore:
     def run_statistics(self): #also include IC
         # Print statement here
         pass #include stats for the different functions, store under data
-
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
     print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading parameters')
@@ -254,7 +193,6 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
     ic(args)
     return args
 
-
 if __name__ == "__main__":
 
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
@@ -270,7 +208,6 @@ if __name__ == "__main__":
         ic.disable()
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug deactivated')
 
-    #sheet.test_write()
     SHEET = GoogleSheets()
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
