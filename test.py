@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from gspread.utils import ValueInputOption
 from icecream import ic 
 import datetime
 import json
@@ -57,8 +58,10 @@ class GoogleSheets:
             
             payload.append({'range': f'C{row_id}:K{row_id}',
                             'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4],route_data[5]]]})
+            
         
         self.worksheet.batch_update(payload)
+        #self.worksheet.bat
         
             #print(payload)
         #print(payload)
@@ -199,10 +202,11 @@ class Strava:
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
-            self.sheet.update_sheet(self.datastore)
+            self.sheet.update_sheet(self.datastore)    
         except: #Too broad
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
-
+        
+        
 class Datastore:
     def __init__(self):
         self.aggregated_route_data = dict()
