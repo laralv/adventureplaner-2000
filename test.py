@@ -7,8 +7,7 @@ import json
 import requests
 import gspread
 import argparse
-
-from requests.models import Response #why is this here?
+import traceback
 
 class GoogleSheets:
     
@@ -26,25 +25,24 @@ class GoogleSheets:
     def read_route_ids(self): #also include IC
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
             self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
-            
-            for text in range(4): #check if this can be done in a better way, while loop? Maybe also if the id were converted to int, all strings could be deleted?
-                self.route_ids.pop(0)
-            
+            self.route_ids = self.route_ids[4:]
             ic(self.route_ids)
     
     def update_sheet(self, datastore): #also include IC, + some info on mapping here
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet') #specify which sheet, use variable, afer google options are read from file
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
-        
-        for route_id in aggregated_route_data.keys():
-            route_data = aggregated_route_data.get(route_id)
-            row_id = self.worksheet.find(route_id).row
-            payload.append({'range': f'C{row_id}:J{row_id}',
-                            'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4]]]})
-        
-        self.worksheet.batch_update(payload, **input_parameters)
+        try:
+            for route_id in aggregated_route_data.keys():
+                route_data = aggregated_route_data.get(route_id)
+                row_id = self.worksheet.find(route_id).row
+                payload.append({'range': f'C{row_id}:J{row_id}',
+                                'values': [[route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4],route_data[5]]]})
+            
+            self.worksheet.batch_update(payload, **input_parameters)
+        except:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet VARIABLE') # Use variable instead
         #tune print statements, dont print unneccesarily
         #consider traceback in try / except
 class Authenticator:
@@ -55,7 +53,6 @@ class Authenticator:
         self.client_secret = ""
         self.access_token = ""
         self.refresh_token = ""
-        self.token_refreshed_ok = "Refrshed token ok" # Not in use, remove
         self.read_secrets()
 
     def read_secrets(self):
@@ -104,7 +101,6 @@ class Strava:
 
     def api_call(self, route_id):
         try:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Making API call')
             session = requests.Session()
             session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
             response = session.get(f'https://www.strava.com/api/v3/routes/{route_id}')
@@ -113,7 +109,7 @@ class Strava:
             ic(self.api_status)
             return response
         except: # be more specific about the exception
-            pass
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API call with route ID {route_id} caused an error')
 
     def test_api(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Testing API')
@@ -134,12 +130,12 @@ class Strava:
         self.test_api()
         try:
             if self.api_status == 200:
-                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting data from strava')
+                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Retrieving {len(self.sheet.route_ids)} routes from strava')
                 
                 for route_id in self.sheet.route_ids:
                     raw_data = self.api_call(route_id).json()
                     if self.api_status == 404:
-                        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Invalid route ID')
+                        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ID {route_id} does not exist')
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
@@ -153,24 +149,30 @@ class Datastore:
         self.aggregated_route_data = dict()
 
     def transform_route_data(self, route_id, raw_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
-        if route_id == raw_data['id_str']:
-            route_data = []
-            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "{raw_data["name"]}")')
-            route_data.append(raw_data["distance"] / 1000) #check rounding 
-            route_data.append(raw_data["elevation_gain"]) #check rounding
-            route_data.append(raw_data["estimated_moving_time"]) #check rounding 
-            route_data.append(raw_data['updated_at']) #change data format
-            #Include also hazardous and maximum_grade
-            #consider https://www.jawg.io/docs/apidocs/elevation/#examples
-            ic(route_data)
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
-            self.aggregate_route_data(route_id, route_data)
-        else:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} and (route id {route_id})')
+        try:
+            if route_id == raw_data['id_str']:
+                route_data = []
+                route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "{raw_data["name"]}")')
+                route_data.append(raw_data["distance"] / 1000)
+                route_data.append(raw_data["elevation_gain"])
+                route_data.append(str(datetime.timedelta(seconds=raw_data["estimated_moving_time"])))
+                route_data.append("%.2f" % ((raw_data['distance'] / raw_data['estimated_moving_time']) * 3.6))
+                route_data.append(datetime.datetime.strptime(raw_data['updated_at'][0:10], "%Y-%m-%d").strftime("%d.%m.%Y"))
+                #Include also hazardous, maximum_grade and altitude
+                
+                ic(route_data)
+                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
+                self.aggregate_route_data(route_id, route_data)
+            else:
+                print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
+        except: #too broad
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error when transforming route data for route {raw_data["name"]} and (route id {route_id})')
+            traceback.print_exc()
+
 
     def aggregate_route_data(self, route_id, transformed_route_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[0]} (route id {route_id})') #this one prints too much
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for route id {route_id}')
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
