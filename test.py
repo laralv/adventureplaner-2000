@@ -41,11 +41,12 @@ class GoogleSheets:
         for route_id in aggregated_route_data.keys():
             route_data = aggregated_route_data.get(route_id)
             row_id = self.worksheet.find(route_id).row
-            payload.append({'range': f'C{row_id}:K{row_id}',
-                            'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4],route_data[5]]]})
+            payload.append({'range': f'C{row_id}:J{row_id}',
+                            'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4]]]})
         
         self.worksheet.batch_update(payload, **input_parameters)
         #tune print statements, dont print unneccesarily
+        #consider traceback in try / except
 class Authenticator:
 
     def __init__(self, secrets):
@@ -155,12 +156,13 @@ class Datastore:
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} (route id {route_id})')
         if route_id == raw_data['id_str']:
             route_data = []
-            route_data.append(raw_data['name']) #Include also hazardous and maximum_grade
-            route_data.append(raw_data['distance'] / 1000) #check rounding 
-            route_data.append(raw_data['elevation_gain']) #check rounding
-            route_data.append(raw_data['estimated_moving_time']) #check rounding
-            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "Strava")') #move to name, also, not working.. 
+            route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}", "{raw_data["name"]}")')
+            route_data.append(raw_data["distance"] / 1000) #check rounding 
+            route_data.append(raw_data["elevation_gain"]) #check rounding
+            route_data.append(raw_data["estimated_moving_time"]) #check rounding 
             route_data.append(raw_data['updated_at']) #change data format
+            #Include also hazardous and maximum_grade
+            #consider https://www.jawg.io/docs/apidocs/elevation/#examples
             ic(route_data)
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
             self.aggregate_route_data(route_id, route_data)
@@ -168,7 +170,7 @@ class Datastore:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
 
     def aggregate_route_data(self, route_id, transformed_route_data):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[0]} (route id {route_id})')
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for {transformed_route_data[0]} (route id {route_id})') #this one prints too much
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
