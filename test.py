@@ -35,7 +35,7 @@ class GoogleSheets:
     def update_sheet(self, datastore): #also include IC, + some info on mapping here
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet')
         aggregated_route_data = datastore.aggregated_route_data
-        params={'value_input_option': 'user_entered'}
+        input_parameters={'value_input_option': 'user_entered'}
         payload = list()
         
         for route_id in aggregated_route_data.keys():
@@ -44,7 +44,7 @@ class GoogleSheets:
             payload.append({'range': f'C{row_id}:K{row_id}',
                             'values': [[route_data[0], route_data[1], route_data[2], '0', '0', '0', route_data[3],route_data[4],route_data[5]]]})
         
-        self.worksheet.batch_update(payload, **params)
+        self.worksheet.batch_update(payload, **input_parameters)
         #tune print statements, dont print unneccesarily
 class Authenticator:
 
@@ -76,8 +76,8 @@ class Authenticator:
             self.access_token = str(response_json['access_token'])
             self.refresh_token = str(response_json['refresh_token'])
             ic(self.access_token, self.refresh_token)
-            self.api_status = response.status_code #This attribute does not belong here, move to strava or something
             self.write_secrets()
+            return response.status_code
         except:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error getting new access token')
 
@@ -121,7 +121,7 @@ class Strava:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API working and access token passed - API Code {self.api_status}')
         elif self.api_status == 401:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Access token expired - API Code {self.api_status}')
-            self.authenticator.get_new_access_token()
+            self.api_status = self.authenticator.get_new_access_token()
         elif self.api_status in range(402, 451):
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 4xx client error - API Code {self.api_status}')
         elif self.api_status in range(500, 511):
