@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from gspread.utils import ValueInputOption
+from gspread.utils import ValueInputOption #is this necessary?
 from icecream import ic 
 import datetime
 import json
