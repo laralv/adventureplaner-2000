@@ -7,7 +7,6 @@ import json
 import requests
 import gspread
 import argparse
-import traceback
 
 class GoogleSheets:
     
@@ -18,7 +17,6 @@ class GoogleSheets:
         self.route_ids = list()
         self.read_route_ids()
         
-
     def read_google_config(self): #dont need in first version, also include IC
         pass
 
@@ -33,6 +31,7 @@ class GoogleSheets:
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
+        
         try:
             for route_id in aggregated_route_data.keys():
                 route_data = aggregated_route_data.get(route_id)
@@ -166,10 +165,8 @@ class Datastore:
                 self.aggregate_route_data(route_id, route_data)
             else:
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
-        except: #too broad
+        except Exception: #too broad
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error when transforming route data for route {raw_data["name"]} and (route id {route_id})')
-            traceback.print_exc()
-
 
     def aggregate_route_data(self, route_id, transformed_route_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for route id {route_id}')
@@ -186,7 +183,6 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
     """
-    ic()
     parser = argparse.ArgumentParser(
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
