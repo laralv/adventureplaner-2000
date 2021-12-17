@@ -1,3 +1,4 @@
+"""Code to retrieve route data from Strava and write to Google sheets"""
 #!/usr/bin/env python3
 
 from gspread.utils import ValueInputOption #is this necessary?
@@ -12,6 +13,7 @@ import traceback
 # call method to aggregate statistics
 
 class GoogleSheets:
+    """Class for interacting with Google Sheets"""
 
     def __init__(self):
         self.service_account = gspread.service_account()
@@ -21,10 +23,11 @@ class GoogleSheets:
         self.read_route_ids()
 
     def read_google_config(self): #dont need in first version, also include IC, include traceback
+        """Method to read data necessary to use the Google Sheet API"""
         pass
 
     def read_route_ids(self): #also include IC
-        
+        """Method to read and store route ids"""
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
             self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
@@ -35,12 +38,17 @@ class GoogleSheets:
             traceback.print_exc()
             quit()
 
-    def update_sheet(self, datastore): #also include IC, + some info on mapping here
+    def update_sheet(self, datastore): 
+        """
+        Method to update the Google Sheet.
+        Mapping to the datastructure of Google Sheet happens here.
+        If there are changes in either data retrieved from Strava or in the datastructure of the Google Sheet,
+        this method must be updated.
+        """
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet') #specify which sheet, use variable, afer google options are read from file
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
-
         try:
             for route_id in aggregated_route_data.keys():
                 route_data = aggregated_route_data.get(route_id)
@@ -55,6 +63,7 @@ class GoogleSheets:
             quit() 
 
 class Authenticator:
+    """Class to deal with authentication through oauth2"""
 
     def __init__(self, secrets):
         self.secrets = secrets
@@ -65,7 +74,7 @@ class Authenticator:
         self.read_secrets()
 
     def read_secrets(self):
-        
+        """Method to read oauth2 tokens from file"""
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from file')
             secrets = json.load(open(self.secrets,'r'))
@@ -79,10 +88,9 @@ class Authenticator:
             traceback.print_exc()
             quit() 
 
-
     def get_new_access_token(self):
+        """Method to refresh oauth2 token"""
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting new access token')
-        
         try:
             token_url = "https://www.strava.com/oauth/token"
             response = requests.post(url = token_url,data =\
@@ -99,7 +107,7 @@ class Authenticator:
             quit() 
 
     def write_secrets(self):
-        
+        """Method to write oauth2 tokens from file"""
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
             secrets = {}
@@ -117,6 +125,8 @@ class Authenticator:
             quit() 
 
 class Strava:
+    """Class for interacting with Strava"""
+    
     def __init__(self, sheet, authenticator, datastore):
         self.sheet = sheet
         self.authenticator = authenticator
@@ -125,7 +135,7 @@ class Strava:
         self.get_data()
 
     def api_call(self, route_id):
-        
+        """Method to call Stravas API"""
         try:
             session = requests.Session()
             session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
@@ -138,6 +148,7 @@ class Strava:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API call with route ID {route_id} caused the following error: {self.api_status}')
 
     def test_api(self):
+        """Method to test the API"""
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Testing API')
         self.api_call(self.sheet.route_ids[1])
         if self.api_status == 200:
@@ -152,13 +163,14 @@ class Strava:
         else:
              print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
 
-    def get_data(self): #To doctstring, do not exceed 100 requests pr 15 minutes
+    def get_data(self):
+        """Method to feed the api_call method
+        According to Stravas terms, do not exceed 100 requests pr 15 minutes
+        """
         self.test_api()
-        
         try:
             if self.api_status == 200:
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Retrieving {len(self.sheet.route_ids)} routes from strava')
-                
                 for route_id in self.sheet.route_ids:
                     raw_data = self.api_call(route_id).json()
                     if self.api_status == 404:
@@ -174,12 +186,16 @@ class Strava:
         self.sheet.update_sheet(self.datastore)
         
 class Datastore:
+    """Class to store, transform and aggregate data"""
+    
     def __init__(self):
         self.aggregated_route_data = dict()
 
     def transform_route_data(self, route_id, raw_data):
+        """Method to transform route data from Strava
+        Changes in this method must be reflect in method update_sheet"
+        """
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} and (route id {route_id})')
-        
         try:
             if route_id == raw_data['id_str']:
                 route_data = []
@@ -199,20 +215,22 @@ class Datastore:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error when transforming route data for route {raw_data["name"]} and (route id {route_id})')
 
     def aggregate_route_data(self, route_id, transformed_route_data):
+        """Method to aggregate route data"""
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Aggregating route data for route id {route_id}')
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
     def aggregate_statistics(self): #also include IC
+        """Method to aggregate statistics"""
         # Print statement here, use datastore, maybe a dict
         pass #include stats for the different functions, store under data
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
-    print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading parameters')
     """
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
     """
+    print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading parameters')
     parser = argparse.ArgumentParser(
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
@@ -227,9 +245,7 @@ if __name__ == "__main__":
 
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
     print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Starting program...')
-
     PARAMETERS = read_parameters()
-
     if PARAMETERS.debug == "yes":
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug mode')
         ic()
