@@ -26,11 +26,14 @@ class GoogleSheets:
         """Method to read data necessary to use the Google Sheet API"""
         pass
 
-    def read_route_ids(self): #also include IC
-        """Method to read and store route ids"""
+    def read_route_ids(self):
+        """Method to read and store route ids
+        The API call to Google Sheet must refer to the column where the route ids are stored
+        If the route ids are moved to another column in the sheet, this method must be updated accordingly
+        """
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
-            self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
+            self.route_ids = self.worksheet.col_values(1)
             self.route_ids = self.route_ids[4:]
             ic(self.route_ids)
         except Exception:
