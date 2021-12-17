@@ -9,14 +9,14 @@ import gspread
 import argparse
 
 class GoogleSheets:
-    
+
     def __init__(self):
         self.service_account = gspread.service_account()
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
         self.worksheet = self.workbook.worksheet("Norge på langs") #move to options
         self.route_ids = list()
         self.read_route_ids()
-        
+
     def read_google_config(self): #dont need in first version, also include IC
         pass
 
@@ -25,20 +25,20 @@ class GoogleSheets:
             self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
             self.route_ids = self.route_ids[4:]
             ic(self.route_ids)
-    
+
     def update_sheet(self, datastore): #also include IC, + some info on mapping here
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet') #specify which sheet, use variable, afer google options are read from file
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
-        
+
         try:
             for route_id in aggregated_route_data.keys():
                 route_data = aggregated_route_data.get(route_id)
                 row_id = self.worksheet.find(route_id).row
                 payload.append({'range': f'C{row_id}:J{row_id}',
                                 'values': [[route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4],route_data[5]]]})
-            
+
             self.worksheet.batch_update(payload, **input_parameters)
         except:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet VARIABLE') # Use variable instead
@@ -62,7 +62,7 @@ class Authenticator:
         self.access_token = secrets['access_token']
         self.refresh_token = secrets['refresh_token']
         ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
-            
+
     def get_new_access_token(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting new access token')
         try:
@@ -124,7 +124,7 @@ class Strava:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 5xx server error - API Code {self.api_status}')
         else:
              print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
-    
+
     def get_data(self): #To doctstring, do not exceed 100 requests pr 15 minutes
         self.test_api()
         try:
@@ -138,10 +138,10 @@ class Strava:
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
-                
+
         except: #Too broad
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
-        
+
         self.sheet.update_sheet(self.datastore)
 class Datastore:
     def __init__(self):
@@ -159,7 +159,7 @@ class Datastore:
                 route_data.append("%.2f" % ((raw_data['distance'] / raw_data['estimated_moving_time']) * 3.6))
                 route_data.append(datetime.datetime.strptime(raw_data['updated_at'][0:10], "%Y-%m-%d").strftime("%d.%m.%Y"))
                 #Include also hazardous, maximum_grade and altitude
-                
+
                 ic(route_data)
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
                 self.aggregate_route_data(route_id, route_data)
@@ -197,9 +197,9 @@ if __name__ == "__main__":
 
     DATEFORMAT = "%d.%m.%Y %H:%M:%S"
     print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Starting program...')
-    
+
     PARAMETERS = read_parameters()
-    
+
     if PARAMETERS.debug == "yes":
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug mode')
         ic()
