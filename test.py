@@ -7,6 +7,9 @@ import json
 import requests
 import gspread
 import argparse
+import traceback
+
+# call method to aggregate statistics
 
 class GoogleSheets:
 
@@ -17,14 +20,20 @@ class GoogleSheets:
         self.route_ids = list()
         self.read_route_ids()
 
-    def read_google_config(self): #dont need in first version, also include IC
+    def read_google_config(self): #dont need in first version, also include IC, include traceback
         pass
 
     def read_route_ids(self): #also include IC
+        
+        try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
             self.route_ids = self.worksheet.col_values(1) # info  in docstring, needs to be 1
             self.route_ids = self.route_ids[4:]
             ic(self.route_ids)
+        except Exception:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed to read route info. Info about the error:')
+            traceback.print_exc()
+            quit()
 
     def update_sheet(self, datastore): #also include IC, + some info on mapping here
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet') #specify which sheet, use variable, afer google options are read from file
@@ -38,12 +47,13 @@ class GoogleSheets:
                 row_id = self.worksheet.find(route_id).row
                 payload.append({'range': f'C{row_id}:J{row_id}',
                                 'values': [[route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4],route_data[5]]]})
-
+            ic(payload)
             self.worksheet.batch_update(payload, **input_parameters)
-        except:
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet VARIABLE') # Use variable instead
-        #tune print statements, dont print unneccesarily
-        #consider traceback in try / except
+            traceback.print_exc()
+            quit() 
+
 class Authenticator:
 
     def __init__(self, secrets):
@@ -55,16 +65,24 @@ class Authenticator:
         self.read_secrets()
 
     def read_secrets(self):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from file')
-        secrets = json.load(open(self.secrets,'r'))
-        self.client_id = secrets['client_id']
-        self.client_secret = secrets['client_secret']
-        self.access_token = secrets['access_token']
-        self.refresh_token = secrets['refresh_token']
-        ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
+        
+        try:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from file')
+            secrets = json.load(open(self.secrets,'r'))
+            self.client_id = secrets['client_id']
+            self.client_secret = secrets['client_secret']
+            self.access_token = secrets['access_token']
+            self.refresh_token = secrets['refresh_token']
+            ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
+        except:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading secrets')
+            traceback.print_exc()
+            quit() 
+
 
     def get_new_access_token(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting new access token')
+        
         try:
             token_url = "https://www.strava.com/oauth/token"
             response = requests.post(url = token_url,data =\
@@ -77,18 +95,26 @@ class Authenticator:
             return response.status_code
         except:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error getting new access token')
+            traceback.print_exc()
+            quit() 
 
     def write_secrets(self):
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
-        secrets = {}
-        secrets['client_id'] = self.client_id
-        secrets['client_secret'] = self.client_secret
-        secrets['access_token'] = self.access_token
-        secrets['refresh_token'] = self.refresh_token
-        FileObj = open(self.secrets,'w')
-        FileObj.write(json.dumps(secrets))
-        FileObj.close()
-        self.read_secrets()
+        
+        try:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing new secrets to file')
+            secrets = {}
+            secrets['client_id'] = self.client_id
+            secrets['client_secret'] = self.client_secret
+            secrets['access_token'] = self.access_token
+            secrets['refresh_token'] = self.refresh_token
+            FileObj = open(self.secrets,'w')
+            FileObj.write(json.dumps(secrets))
+            FileObj.close()
+            self.read_secrets()
+        except Exception:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing secrets to file')
+            traceback.print_exc()
+            quit() 
 
 class Strava:
     def __init__(self, sheet, authenticator, datastore):
@@ -99,6 +125,7 @@ class Strava:
         self.get_data()
 
     def api_call(self, route_id):
+        
         try:
             session = requests.Session()
             session.headers.update({'Authorization': f'Bearer {self.authenticator.access_token}'})
@@ -107,8 +134,8 @@ class Strava:
             ic(response)
             ic(self.api_status)
             return response
-        except: # be more specific about the exception
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API call with route ID {route_id} caused an error')
+        except Exception:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: API call with route ID {route_id} caused the following error: {self.api_status}')
 
     def test_api(self):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Testing API')
@@ -127,6 +154,7 @@ class Strava:
 
     def get_data(self): #To doctstring, do not exceed 100 requests pr 15 minutes
         self.test_api()
+        
         try:
             if self.api_status == 200:
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Retrieving {len(self.sheet.route_ids)} routes from strava')
@@ -138,17 +166,20 @@ class Strava:
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
-
-        except: #Too broad
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
+            traceback.print_exc()
+            quit() 
 
         self.sheet.update_sheet(self.datastore)
+        
 class Datastore:
     def __init__(self):
         self.aggregated_route_data = dict()
 
     def transform_route_data(self, route_id, raw_data):
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Attempting to transform route data for route {raw_data["name"]} and (route id {route_id})')
+        
         try:
             if route_id == raw_data['id_str']:
                 route_data = []
@@ -159,13 +190,12 @@ class Datastore:
                 route_data.append("%.2f" % ((raw_data['distance'] / raw_data['estimated_moving_time']) * 3.6))
                 route_data.append(datetime.datetime.strptime(raw_data['updated_at'][0:10], "%Y-%m-%d").strftime("%d.%m.%Y"))
                 #Include also hazardous, maximum_grade and altitude
-
                 ic(route_data)
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route data succesfully transformed')
                 self.aggregate_route_data(route_id, route_data)
             else:
                 print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Route ids do not match')
-        except Exception: #too broad
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error when transforming route data for route {raw_data["name"]} and (route id {route_id})')
 
     def aggregate_route_data(self, route_id, transformed_route_data):
@@ -173,8 +203,8 @@ class Datastore:
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
-    def run_statistics(self): #also include IC
-        # Print statement here
+    def aggregate_statistics(self): #also include IC
+        # Print statement here, use datastore, maybe a dict
         pass #include stats for the different functions, store under data
 
 def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
