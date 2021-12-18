@@ -56,8 +56,8 @@ class GoogleSheets:
             for route_id in aggregated_route_data.keys():
                 route_data = aggregated_route_data.get(route_id)
                 row_id = self.worksheet.find(route_id).row
-                payload.append({'range': f'C{row_id}:J{row_id}',
-                                'values': [[route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4],route_data[5]]]})
+                payload.append({'range': f'B{row_id}:I{row_id}',
+                                'values': [[route_data[5], route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4]]]})
             ic(payload)
             self.worksheet.batch_update(payload, **input_parameters)
         except Exception:
