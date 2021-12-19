@@ -34,7 +34,7 @@ class GoogleSheets:
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading route IDs')
             self.route_ids = self.worksheet.col_values(1)
-            self.route_ids = self.route_ids[4:]
+            self.route_ids = self.route_ids[5:]
             ic(self.route_ids)
         except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed to read route info. Info about the error:')
@@ -56,8 +56,8 @@ class GoogleSheets:
             for route_id in aggregated_route_data.keys():
                 route_data = aggregated_route_data.get(route_id)
                 row_id = self.worksheet.find(route_id).row
-                payload.append({'range': f'B{row_id}:I{row_id}',
-                                'values': [[route_data[5], route_data[0], route_data[1], route_data[2], '0', '0', route_data[3],route_data[4]]]})
+                payload.append({'range': f'B{row_id}:H{row_id}',
+                                'values': [[route_data[4], route_data[0], route_data[1], route_data[2], '0', '0', route_data[3]]]})
             ic(payload)
             self.worksheet.batch_update(payload, **input_parameters)
         except Exception:
@@ -206,7 +206,6 @@ class Datastore:
                 route_data.append(raw_data["distance"] / 1000)
                 route_data.append(raw_data["elevation_gain"])
                 route_data.append(str(datetime.timedelta(seconds=raw_data["estimated_moving_time"])))
-                route_data.append("%.2f" % ((raw_data['distance'] / raw_data['estimated_moving_time']) * 3.6))
                 route_data.append(datetime.datetime.strptime(raw_data['updated_at'][0:10], "%Y-%m-%d").strftime("%d.%m.%Y"))
                 #Include also hazardous, maximum_grade and altitude
                 ic(route_data)
