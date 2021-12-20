@@ -141,7 +141,7 @@ class Authenticator:
 
 class Strava:
     """Class for interacting with Strava"""
-    
+
     def __init__(self, sheet, authenticator, datastore):
         self.sheet = sheet
         self.authenticator = authenticator
@@ -199,10 +199,10 @@ class Strava:
             quit() 
 
         self.sheet.update_sheet(self.datastore)
-        
+
 class Datastore:
     """Class to store, transform and aggregate data"""
-    
+
     def __init__(self):
         self.aggregated_route_data = dict()
 
@@ -274,5 +274,3 @@ if __name__ == "__main__":
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
-
-    
