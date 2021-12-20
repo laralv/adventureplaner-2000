@@ -15,16 +15,28 @@ import traceback
 class GoogleSheets:
     """Class for interacting with Google Sheets"""
 
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
+        self.read_google_config()
         self.service_account = gspread.service_account()
         self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
-        self.worksheet = self.workbook.worksheet("Norge på langs") #move to options
+        self.worksheet = self.workbook.worksheet("Test") #move to options
         self.route_ids = list()
         self.read_route_ids()
 
     def read_google_config(self): #dont need in first version, also include IC, include traceback
         """Method to read data necessary to use the Google Sheet API"""
-        pass
+        try:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading Google config from file')
+            secrets = json.load(open(self.config,'r'))
+            self.client_id = secrets['client_id'] #wrong name
+            self.client_secret = secrets['client_secret'] #wrong name
+            ic(self.client_id, self.client_secret) #wrong name, change above and below
+        except:
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading secrets')
+            traceback.print_exc()
+            quit()
+
 
     def read_route_ids(self):
         """Method to read and store route ids
@@ -48,7 +60,7 @@ class GoogleSheets:
         If there are changes in either data retrieved from Strava or in the datastructure of the Google Sheet,
         this method must be updated.
         """
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet') #specify which sheet, use variable, afer google options are read from file
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet VARIABLE') #specify which sheet, use variable, afer google options are read from file
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
@@ -237,6 +249,8 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
                         help="Flag to enable or disable icecream debug", required=True)
+    parser.add_argument("--config", type=str,
+                        help="Json file that stores Google config", required=True)
     parser.add_argument("--secrets", type=str,
                         help="Json file that stores secrets", required=True)
     args = parser.parse_args()
@@ -256,7 +270,7 @@ if __name__ == "__main__":
         ic.disable()
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug deactivated')
 
-    SHEET = GoogleSheets()
+    SHEET = GoogleSheets(PARAMETERS.config)
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
