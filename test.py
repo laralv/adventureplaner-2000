@@ -33,7 +33,7 @@ class GoogleSheets:
             self.client_secret = secrets['client_secret'] #wrong name
             ic(self.client_id, self.client_secret) #wrong name, change above and below
         except:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading secrets')
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading Google config')
             traceback.print_exc()
             quit()
 
@@ -53,7 +53,7 @@ class GoogleSheets:
             traceback.print_exc()
             quit()
 
-    def update_sheet(self, datastore): 
+    def update_sheet(self, datastore):
         """
         Method to update the Google Sheet.
         Mapping to the datastructure of Google Sheet happens here.
