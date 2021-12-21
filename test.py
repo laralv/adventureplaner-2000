@@ -1,7 +1,6 @@
 """Code to retrieve route data from Strava and write to Google sheets"""
 #!/usr/bin/env python3
 
-from gspread.utils import ValueInputOption #is this necessary?
 from icecream import ic 
 import datetime
 import json
@@ -15,28 +14,28 @@ import traceback
 class GoogleSheets:
     """Class for interacting with Google Sheets"""
 
-    def __init__(self, config):
-        self.config = config
-        self.read_google_config()
+    def __init__(self, config_file):
+        self.workbook_id = ""
+        self.worksheet_name = ""
         self.service_account = gspread.service_account()
-        self.workbook = self.service_account.open_by_key('1LOXibiJnqvVGRGNz4nnKL9FiWtRmnj3hyjO1dqSlnN0') #move to options
-        self.worksheet = self.workbook.worksheet("Test") #move to options
+        self.read_google_config(config_file)
+        self.workbook = self.service_account.open_by_key(self.workbook_id)
+        self.worksheet = self.workbook.worksheet(self.worksheet_name)
         self.route_ids = list()
         self.read_route_ids()
 
-    def read_google_config(self): #dont need in first version, also include IC, include traceback
+    def read_google_config(self, config_file):
         """Method to read data necessary to use the Google Sheet API"""
         try:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading Google config from file')
-            secrets = json.load(open(self.config,'r'))
-            self.client_id = secrets['client_id'] #wrong name
-            self.client_secret = secrets['client_secret'] #wrong name
-            ic(self.client_id, self.client_secret) #wrong name, change above and below
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading Google config from {config_file}')
+            config = json.load(open(config_file,'r'))
+            self.workbook_id = config['workbook_id']
+            self.worksheet_name = config['worksheet_name']
+            ic(self.workbook_id, self.worksheet_name)
         except:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading Google config')
             traceback.print_exc()
             quit()
-
 
     def read_route_ids(self):
         """Method to read and store route ids
@@ -60,7 +59,7 @@ class GoogleSheets:
         If there are changes in either data retrieved from Strava or in the datastructure of the Google Sheet,
         this method must be updated.
         """
-        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet VARIABLE') #specify which sheet, use variable, afer google options are read from file
+        print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet {self.worksheet_name}')
         aggregated_route_data = datastore.aggregated_route_data
         input_parameters={'value_input_option': 'user_entered'}
         payload = list()
@@ -73,15 +72,15 @@ class GoogleSheets:
             ic(payload)
             self.worksheet.batch_update(payload, **input_parameters)
         except Exception:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet VARIABLE') # Use variable instead
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet {self.worksheet_name}')
             traceback.print_exc()
             quit() 
 
 class Authenticator:
     """Class to deal with authentication through oauth2"""
 
-    def __init__(self, secrets):
-        self.secrets = secrets
+    def __init__(self, secrets_file):
+        self.secrets_file = secrets_file
         self.client_id = ""
         self.client_secret = ""
         self.access_token = ""
@@ -91,8 +90,8 @@ class Authenticator:
     def read_secrets(self):
         """Method to read oauth2 tokens from file"""
         try:
-            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from file')
-            secrets = json.load(open(self.secrets,'r'))
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from {self.secrets_file}')
+            secrets = json.load(open(self.secrets_file,'r'))
             self.client_id = secrets['client_id']
             self.client_secret = secrets['client_secret']
             self.access_token = secrets['access_token']
@@ -130,9 +129,9 @@ class Authenticator:
             secrets['client_secret'] = self.client_secret
             secrets['access_token'] = self.access_token
             secrets['refresh_token'] = self.refresh_token
-            FileObj = open(self.secrets,'w')
-            FileObj.write(json.dumps(secrets))
-            FileObj.close()
+            file_object = open(self.secrets_file,'w')
+            file_object.write(json.dumps(secrets))
+            file_object.close()
             self.read_secrets()
         except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing secrets to file')
@@ -249,9 +248,9 @@ def read_parameters(): #rewrite, all config and secrets in one file, only two ar
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
                         help="Flag to enable or disable icecream debug", required=True)
-    parser.add_argument("--config", type=str,
+    parser.add_argument("--config_file", type=str,
                         help="Json file that stores Google config", required=True)
-    parser.add_argument("--secrets", type=str,
+    parser.add_argument("--secrets_file", type=str,
                         help="Json file that stores secrets", required=True)
     args = parser.parse_args()
     ic(args)
@@ -270,7 +269,7 @@ if __name__ == "__main__":
         ic.disable()
         print(f'{datetime.datetime.now().strftime(DATEFORMAT)}: Debug deactivated')
 
-    SHEET = GoogleSheets(PARAMETERS.config)
-    AUTHENTICATOR = Authenticator(PARAMETERS.secrets)
+    SHEET = GoogleSheets(PARAMETERS.config_file)
+    AUTHENTICATOR = Authenticator(PARAMETERS.secrets_file)
     DATASTORE = Datastore()
     STRAVA = Strava(SHEET, AUTHENTICATOR, DATASTORE)
