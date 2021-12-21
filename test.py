@@ -1,13 +1,13 @@
 """Code to retrieve route data from Strava and write to Google sheets"""
 #!/usr/bin/env python3
 
-from icecream import ic 
 import datetime
 import json
-import requests
-import gspread
 import argparse
 import traceback
+import requests
+import gspread
+from icecream import ic
 
 # call method to aggregate statistics
 
@@ -28,11 +28,11 @@ class GoogleSheets:
         """Method to read data necessary to use the Google Sheet API"""
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading Google config from {config_file}')
-            config = json.load(open(config_file,'r'))
+            config = json.load(open(config_file, 'r'))
             self.workbook_id = config['workbook_id']
             self.worksheet_name = config['worksheet_name']
             ic(self.workbook_id, self.worksheet_name)
-        except:
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading Google config')
             traceback.print_exc()
             quit()
@@ -61,7 +61,7 @@ class GoogleSheets:
         """
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Writing route data to sheet {self.worksheet_name}')
         aggregated_route_data = datastore.aggregated_route_data
-        input_parameters={'value_input_option': 'user_entered'}
+        input_parameters = {'value_input_option': 'user_entered'}
         payload = list()
         try:
             for route_id in aggregated_route_data.keys():
@@ -74,7 +74,7 @@ class GoogleSheets:
         except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing to sheet {self.worksheet_name}')
             traceback.print_exc()
-            quit() 
+            quit()
 
 class Authenticator:
     """Class to deal with authentication through oauth2"""
@@ -91,34 +91,34 @@ class Authenticator:
         """Method to read oauth2 tokens from file"""
         try:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading secrets from {self.secrets_file}')
-            secrets = json.load(open(self.secrets_file,'r'))
+            secrets = json.load(open(self.secrets_file, 'r'))
             self.client_id = secrets['client_id']
             self.client_secret = secrets['client_secret']
             self.access_token = secrets['access_token']
             self.refresh_token = secrets['refresh_token']
             ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
-        except:
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error reading secrets')
             traceback.print_exc()
-            quit() 
+            quit()
 
     def get_new_access_token(self):
         """Method to refresh oauth2 token"""
         print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Getting new access token')
         try:
             token_url = "https://www.strava.com/oauth/token"
-            response = requests.post(url = token_url,data =\
-                {'client_id': self.client_id,'client_secret': self.client_secret,'grant_type': 'refresh_token','refresh_token': self.refresh_token})
+            response = requests.post(url=token_url, data=\
+                {'client_id': self.client_id, 'client_secret': self.client_secret, 'grant_type': 'refresh_token', 'refresh_token': self.refresh_token})
             response_json = response.json()
             self.access_token = str(response_json['access_token'])
             self.refresh_token = str(response_json['refresh_token'])
             ic(self.access_token, self.refresh_token)
             self.write_secrets()
             return response.status_code
-        except:
+        except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error getting new access token')
             traceback.print_exc()
-            quit() 
+            quit()
 
     def write_secrets(self):
         """Method to write oauth2 tokens from file"""
@@ -129,14 +129,14 @@ class Authenticator:
             secrets['client_secret'] = self.client_secret
             secrets['access_token'] = self.access_token
             secrets['refresh_token'] = self.refresh_token
-            file_object = open(self.secrets_file,'w')
+            file_object = open(self.secrets_file, 'w')
             file_object.write(json.dumps(secrets))
             file_object.close()
             self.read_secrets()
         except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Error writing secrets to file')
             traceback.print_exc()
-            quit() 
+            quit()
 
 class Strava:
     """Class for interacting with Strava"""
@@ -175,7 +175,7 @@ class Strava:
         elif self.api_status in range(500, 511):
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: 5xx server error - API Code {self.api_status}')
         else:
-             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
+            print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Unspecified API error')
 
     def get_data(self):
         """Method to feed the api_call method
@@ -195,7 +195,7 @@ class Strava:
         except Exception:
             print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Failed retrieving data from Strava')
             traceback.print_exc()
-            quit() 
+            quit()
 
         self.sheet.update_sheet(self.datastore)
 
@@ -238,7 +238,7 @@ class Datastore:
         # Print statement here, use datastore, maybe a dict
         pass #include stats for the different functions, store under data
 
-def read_parameters(): #rewrite, all config and secrets in one file, only two arguments, debug and config file
+def read_parameters():
     """
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
