@@ -209,7 +209,7 @@ class Strava:
             print('> Failed retrieving data from Strava, could be issue with route ID')
 
         print(f'> Tried {len(self.sheet.route_ids)} route IDs. Succeeded: {self.datastore.stats.get("valid_id")}, failed: {self.datastore.stats.get("invalid_id")}')
-        #self.sheet.update_sheet(self.datastore)
+        self.sheet.update_sheet(self.datastore)
 
 class Datastore:
     """Class to store, transform and aggregate data"""
