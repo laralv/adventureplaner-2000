@@ -9,9 +9,6 @@ import requests
 import gspread
 from icecream import ic
 
-# call method to aggregate statistics
-# change f' when not needed
-
 class GoogleSheets:
     """Class for interacting with Google Sheets"""
 
@@ -26,7 +23,7 @@ class GoogleSheets:
         self.read_route_ids()
 
     def read_google_config(self, config_file):
-        """Method to read data necessary to use the Google Sheet API"""
+        """Method to read configruation for Google Sheet API"""
         try:
             print(f'> Reading Google config from {config_file}')
             config = json.load(open(config_file, 'r'))
@@ -34,15 +31,16 @@ class GoogleSheets:
             self.worksheet_name = config['worksheet_name']
             ic(self.workbook_id, self.worksheet_name)
         except FileNotFoundError:
-            print('> Error reading Google config. Info about the error:')
+            print('> Error reading Google API config. Info about the error:')
             traceback.print_exc()
             quit()
 
     def read_route_ids(self):
-        """Method to read and store route ids
+        """
+        Method to read and store route ids.
         The API call to Google Sheet must refer to the column where the route ids are stored
         If the route ids are moved to another column in the sheet,
-        this method must be updated accordingly
+        this method must be updated accordingly.
         """
         try:
             print('> Reading route IDs')
@@ -113,7 +111,7 @@ class Authenticator:
 
     def get_new_access_token(self):
         """Method to refresh oauth2 token"""
-        print(f'> Getting new access token')
+        print('> Getting new access token')
         try:
             token_url = "https://www.strava.com/oauth/token"
             response = requests.post(url=token_url, data=\
@@ -135,7 +133,7 @@ class Authenticator:
     def write_secrets(self):
         """Method to write oauth2 tokens from file"""
         try:
-            print(f'> Writing new secrets to file')
+            print('> Writing new secrets to file')
             secrets = {}
             secrets['client_id'] = self.client_id
             secrets['client_secret'] = self.client_secret
@@ -175,7 +173,7 @@ class Strava:
 
     def test_api(self):
         """Method to test the API"""
-        print(f'> Testing API')
+        print('> Testing API')
         self.api_call(self.sheet.route_ids[1])
         if self.api_status == 200:
             print(f'> API working and access token passed - API Code {self.api_status}')
@@ -190,8 +188,9 @@ class Strava:
             print('> Unspecified API error')
 
     def get_data(self):
-        """Method to feed the api_call method
-        According to Stravas terms, do not exceed 100 requests pr 15 minutes
+        """
+        Method to feed the api_call method.
+        According to Stravas terms, do not exceed 100 requests pr 15 minutes.
         """
         self.test_api()
         try:
@@ -201,23 +200,29 @@ class Strava:
                     raw_data = self.api_call(route_id).json()
                     if self.api_status == 404:
                         print(f'> Route ID {route_id} does not exist')
+                        self.datastore.aggregate_statistics("invalid_id", 1)
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
+                        self.datastore.aggregate_statistics("valid_id", 1)
                         ic(raw_data)
         except LookupError:
             print('> Failed retrieving data from Strava, could be issue with route ID')
 
-        self.sheet.update_sheet(self.datastore)
+        print(f'> Tried {len(self.sheet.route_ids)} route IDs. Succeeded: {self.datastore.stats.get("valid_id")}, failed: {self.datastore.stats.get("invalid_id")}')
+        #self.sheet.update_sheet(self.datastore)
 
 class Datastore:
     """Class to store, transform and aggregate data"""
 
     def __init__(self):
         self.aggregated_route_data = dict()
+        self.stats = {"valid_id":0, "invalid_id":0}
 
     def transform_route_data(self, route_id, raw_data):
-        """Method to transform route data from Strava
-        Changes in this method must be reflect in method update_sheet"
+        """
+        Method to transform route data from Strava
+        Changes in this method must be reflected in the method update_sheet
+        of the GoogleSheets class.
         """
         print(f'> Trying to transform data for route {raw_data["name"]} (route id {route_id})')
         try:
@@ -244,17 +249,18 @@ class Datastore:
         self.aggregated_route_data.update({route_id: transformed_route_data})
         ic(self.aggregated_route_data)
 
-    def aggregate_statistics(self): #also include IC
+    def aggregate_statistics(self, key, value):
         """Method to aggregate statistics"""
-        # Print statement here, use datastore, maybe a dict
-        #pass #include stats for the different functions, store under data
+        tmp_counter = self.stats.get(key)+value
+        self.stats.update({key:tmp_counter})
+        ic(self.stats)
 
 def read_parameters():
     """
     Function for reading variables for the script,
     for more on argparse, refer to https://zetcode.com/python/argparse/
     """
-    print(f'{datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")}: Reading parameters')
+    print('> Reading parameters')
     parser = argparse.ArgumentParser(
         description="Parameters for Adventure planner 2000")
     parser.add_argument("--debug", type=str,
@@ -269,15 +275,15 @@ def read_parameters():
 
 if __name__ == "__main__":
 
-    print(f'> Starting program...')
+    print('> Starting program...')
     PARAMETERS = read_parameters()
     if PARAMETERS.debug == "yes":
-        print(f'> Debug mode')
+        print('> Debug mode')
         ic()
     elif PARAMETERS.debug == "no":
         ic()
         ic.disable()
-        print(f'> Debug deactivated')
+        print('> Debug deactivated')
 
     SHEET = GoogleSheets(PARAMETERS.config_file)
     AUTHENTICATOR = Authenticator(PARAMETERS.secrets_file)
