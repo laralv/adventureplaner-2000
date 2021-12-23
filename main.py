@@ -205,9 +205,7 @@ class Strava:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
         except LookupError:
-            print('> Failed retrieving data from Strava. Info about the error:')
-            traceback.print_exc()
-            quit()
+            print('> Failed retrieving data from Strava, could be issue with route ID')
 
         self.sheet.update_sheet(self.datastore)
 
@@ -225,8 +223,7 @@ class Datastore:
         try:
             if route_id == raw_data['id_str']:
                 route_data = []
-                route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}",\
-                                  "{raw_data["name"]}")')
+                route_data.append(f'=HYPERLINK("https://www.strava.com/routes/{route_id}","{raw_data["name"]}")')
                 route_data.append(raw_data["distance"] / 1000)
                 route_data.append(raw_data["elevation_gain"])
                 route_data.append(str(datetime.timedelta(seconds=raw_data["estimated_moving_time"])))
