@@ -10,6 +10,7 @@ import gspread
 from icecream import ic
 
 # call method to aggregate statistics
+# change f' when not needed
 
 class GoogleSheets:
     """Class for interacting with Google Sheets"""
@@ -32,8 +33,8 @@ class GoogleSheets:
             self.workbook_id = config['workbook_id']
             self.worksheet_name = config['worksheet_name']
             ic(self.workbook_id, self.worksheet_name)
-        except Exception:
-            print(f'> Error reading Google config')
+        except FileNotFoundError:
+            print('> Error reading Google config. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -44,12 +45,12 @@ class GoogleSheets:
         this method must be updated accordingly
         """
         try:
-            print(f'> Reading route IDs')
+            print('> Reading route IDs')
             self.route_ids = self.worksheet.col_values(1)
             self.route_ids = self.route_ids[5:]
             ic(self.route_ids)
-        except Exception:
-            print(f'> Failed to read route info. Info about the error:')
+        except LookupError:
+            print('> Failed to read route info. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -79,7 +80,7 @@ class GoogleSheets:
                                         route_data[3]]]})
             ic(payload)
             self.worksheet.batch_update(payload, **input_parameters)
-        except Exception:
+        except LookupError:
             print(f'> Error writing to sheet {self.worksheet_name}')
             traceback.print_exc()
             quit()
@@ -105,8 +106,8 @@ class Authenticator:
             self.access_token = secrets['access_token']
             self.refresh_token = secrets['refresh_token']
             ic(self.client_id, self.client_secret, self.access_token, self.refresh_token)
-        except Exception:
-            print(f'> Error reading secrets')
+        except FileNotFoundError:
+            print('> Error reading secrets. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -126,8 +127,8 @@ class Authenticator:
             ic(self.access_token, self.refresh_token)
             self.write_secrets()
             return response.status_code
-        except Exception:
-            print(f'> Error getting new access token')
+        except LookupError:
+            print('> Error getting new access token. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -144,8 +145,8 @@ class Authenticator:
             file_object.write(json.dumps(secrets))
             file_object.close()
             self.read_secrets()
-        except Exception:
-            print(f'> Error writing secrets to file')
+        except FileNotFoundError:
+            print('> Error writing secrets to file. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -169,7 +170,7 @@ class Strava:
             ic(response)
             ic(self.api_status)
             return response
-        except Exception:
+        except LookupError:
             print(f'> API call for route ID {route_id} caused error: {self.api_status}')
 
     def test_api(self):
@@ -186,7 +187,7 @@ class Strava:
         elif self.api_status in range(500, 511):
             print(f'> 5xx server error - API Code {self.api_status}')
         else:
-            print(f'> Unspecified API error')
+            print('> Unspecified API error')
 
     def get_data(self):
         """Method to feed the api_call method
@@ -203,8 +204,8 @@ class Strava:
                     else:
                         self.datastore.transform_route_data(route_id, raw_data)
                         ic(raw_data)
-        except Exception:
-            print(f'> Failed retrieving data from Strava')
+        except LookupError:
+            print('> Failed retrieving data from Strava. Info about the error:')
             traceback.print_exc()
             quit()
 
@@ -233,11 +234,11 @@ class Datastore:
                                   "%Y-%m-%d").strftime("%d.%m.%Y"))
                 #Include also hazardous, maximum_grade and altitude
                 ic(route_data)
-                print(f'> Route data succesfully transformed')
+                print(f'> Route data for {route_id} succesfully transformed')
                 self.aggregate_route_data(route_id, route_data)
             else:
-                print(f'> Route ids do not match')
-        except Exception:
+                print('> Route ids do not match')
+        except LookupError:
             print(f'> Error transforming data for route {raw_data["name"]} (route id {route_id})')
 
     def aggregate_route_data(self, route_id, transformed_route_data):
