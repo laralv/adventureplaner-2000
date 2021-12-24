@@ -14,6 +14,10 @@ Before running the Python-script you will need to take care of a few things:
 4. The gspread library requires that you provide some info, that will be used to authenticate with Google. We found that Google service accounts is the easiest way to authenticate with Google. Authenticating this way also has the advantage that you only need to grant access to a specific workbook, i.e. the one you created in step 2, instead of your entire Google Drive. The process of setting up a Google service account and configure gspread is quite well explained in the [documentation](https://docs.gspread.org/en/latest/oauth2.html) og gspread. Note that you also need to enable API access for Google Sheets. It seems API access to Google Drive is not necessary if service account is used for authentication. 
 5. Gspread also needs to know which workbook and sheet to work on. Provide this information by updating `google_config.json` with the id of your workbook and name of the sheet, according to step 1.
 6. [Strava](https://www.strava.com) require all users of their API to authenticate, even though your routes may be public. The Python-script will handle the authentication with Strava, using oauth2, but needs four pieces of information: a client ID, a client secret, an access token and a refresh token. To get your hands on this information, follow [Stravas getting startet guide for developers](https://developers.strava.com/docs/getting-started/). Once you have the information, update `strava_tokens.json`.
+
+The picture below shows the sheet from the Blu Acciaio Toolbox, which you must copy to your own workbook.
+<img width="1000" src="sheet_template.png"/>
+
 ## Using Adventure Planner 2000
 Once you have completed the steps above, your are ready to start planning! Just follow these steps:
 1. Create some [routes in Strava](https://www.strava.com/athlete/routes). Take note of the route ID, e.g. 27711092. You find the route ID by looking at the URL, its the last part.
@@ -21,6 +25,12 @@ Once you have completed the steps above, your are ready to start planning! Just 
 3. Run the Python-script, and make sure to provide `google_config.json` and `strava_tokens.json` as arguments, along with --debug. The command would typically look like this: `python3 main.py --debug no --secrets_file strava_tokens.json --config_file google_config.json` The debug option creates a lot of noise, and is only useful if you need to troubleshoot something.
 4. Open up your Google sheet. It will now contain select route data from Strava in columns B-G. Columns H-K are computed automatically, based on data from Strava and the preferences set in B2-B3, D2-D3 and H2. We think these preference should match most tourers out there, but if you need to tweak estimates for time and average speed up or down, just change these values.
 5. Finally, enrich your route data from Strava by adding data in columns L, M and P. When you have your route all dialed in, mark it as verified in column N. Column O will show you some key info about the rute, and there are also some stats all the way to the right in the sheet. If you change the routes in Strava later on, just run the Python-script again. It will lookup the right route IDs in the sheet and only replace relevant data from Strava and leave user added data unaltered.   
+
+The picture below shows what kind of terminal output you can expect when runnint the Python-script 
+<img width="800" src="terminal.png"/>
+
+The picture below shows how the sheet looks like after Strava data has been imported and enriched by the user(tourer)
+<img width="1000" src="sheet_example.png"/>
 
 ## The road ahead
 This is a beta version and we are still working on it, so let us know if you have ideas for improvements or are stuck somehow in getting it to work.
