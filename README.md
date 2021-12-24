@@ -29,7 +29,7 @@ Once you have completed the steps above, your are ready to start planning! Just 
 The picture below shows what kind of terminal output you can expect when runnint the Python-script 
 <img width="800" src="terminal.png"/>
 
-The picture below shows how the sheet looks like after Strava data has been imported and enriched by the user(tourer)
+The picture below shows how the sheet looks like after Strava data has been imported and enriched by the user (tourer)
 <img width="1000" src="sheet_example.png"/>
 
 ## The road ahead
