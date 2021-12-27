@@ -1,11 +1,12 @@
 # Adventure Planner 2000 - the ultimate planning tool for bicycle touring
 
-If you plan to roll as these gentlemen here[^1], spending weeks, or maybe months, on the road, some planning could really pay off. The idea with Adventure Planner 2000 is to make that planning a bit easier. 
+If you plan to roll as these gentlemen here[^1], spending weeks, or maybe months, on the road, some planning could really pay off. Stravas route planner certainly can be of big help, and the heatmaps are particularly useful. Still, it has some shortcomings, most notably the lacking ability to display an overview and basic statistics about select routes. Adventure Planner 2000 is finally here to fill that gap. 
 <img width="500" src="https://raw.githubusercontent.com/laralv/adventureplaner-2000/master/URN%20NBN%20no-nb_foto_NF_WL_02381.jpg" />
 
 ## Configuring Adventure Planner 2000
 
-Adventure Planner 2000 consists of two parts; a Python-script and a Google Sheet. The Python-script reads route data from Strava and writes it to the Google sheet. In turn, the tourer will further enrich the data, and get a nice overview of what lies ahead. A BIT MORE INFO HERE. ARCHIMATE FIGURE
+Adventure Planner 2000 consists of two main parts; a Python-script and a Google Sheet. The Python-script reads route data from Strava. The same script then transforms relevant parts of the data and writes it to the Google sheet. The tourer will then further enrich the data by adding notes and so forth to the Google sheet. In sum, this will give the tourer a nice and confident-building overview of what lies ahead. The picture below shows an Archimate overview of how Adventure Planner 2000 works.
+<img width="800" src="archimate.png">
 
 Before running the Python-script you will need to take care of a few things:
 1. Clone this repo or download the three files `main.py, google_config.json, strava_routes.json`
