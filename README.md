@@ -1,6 +1,6 @@
 # Adventure Planner 2000 - the ultimate planning tool for bicycle touring
 
-If you plan to roll as these gentlemen here[^1], spending weeks, or maybe months, on the road, some planning could really pay off. Stravas route planner certainly can be of big help, and the heatmaps are particularly useful. Still, it has some shortcomings, most notably the lacking ability to display an overview and basic statistics about select routes. Adventure Planner 2000 is finally here to fill that gap. 
+If you plan to roll as these gentlemen here[^1], spending weeks, or maybe months, on the road, some planning could really pay off. [Stravas route planner](https://www.strava.com/athlete/routes) certainly can be of big help, and the heatmaps are particularly useful. Still, it has some shortcomings, most notably the lacking ability to display an overview and basic statistics about select routes. Adventure Planner 2000 is finally here to fill that gap. 
 <img width="500" src="https://raw.githubusercontent.com/laralv/adventureplaner-2000/master/URN%20NBN%20no-nb_foto_NF_WL_02381.jpg" />
 
 ## Configuring Adventure Planner 2000
