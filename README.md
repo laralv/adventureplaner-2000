@@ -5,7 +5,7 @@ If you plan to roll as these gentlemen here[^1], spending weeks, or maybe months
 
 ## Configuring Adventure Planner 2000
 
-Adventure Planner 2000 consists of two parts; a Python-script and a Google Sheet. The Python-script reads route data from Strava and writes it to the Google sheet. In turn, the tourer will further enrich the data, and get a nice overview of what lies ahead.
+Adventure Planner 2000 consists of two parts; a Python-script and a Google Sheet. The Python-script reads route data from Strava and writes it to the Google sheet. In turn, the tourer will further enrich the data, and get a nice overview of what lies ahead. A BIT MORE INFO HERE. ARCHIMATE FIGURE
 
 Before running the Python-script you will need to take care of a few things:
 1. Clone this repo or download the three files `main.py, google_config.json, strava_routes.json`
