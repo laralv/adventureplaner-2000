@@ -40,4 +40,4 @@ Reach out to us by creating an issue here at github, or by sending a few words t
 
 
 
-[^1]: Early bike packers as Voss (photo: Axel Lindahl/Norsk Folkemuseum)
+[^1]: Early bike packers at Voss (photo: Axel Lindahl/Norsk Folkemuseum)
